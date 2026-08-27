@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AeroSafe AI — Aviation Safety Analytics Dashboard</title>
+    <!-- Outfit Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* Color Palette & Themes */
+        :root {
+            /* Dark Theme (Default) */
+            --bg-color: #0b0f19;
+            --panel-bg: rgba(17, 24, 39, 0.95);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --accent-primary: #3b82f6;
+            --accent-success: #10b981;
+            --accent-warning: #f59e0b;
+            --accent-danger: #ef4444;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --glow-color: rgba(59, 130, 246, 0.3);
+            --card-hover: rgba(255, 255, 255, 0.04);
+            --input-bg: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Light Theme Modifiers */
+        [data-theme="light"] {
+            --bg-color: #f3f4f6;
+            --panel-bg: rgba(255, 255, 255, 0.98);
+            --border-color: rgba(0, 0, 0, 0.08);
+            --accent-primary: #2563eb;
+            --accent-success: #059669;
+            --accent-warning: #d97706;
+            --accent-danger: #dc2626;
+            --text-main: #1f2937;
+            --text-muted: #4b5563;
+            --glow-color: rgba(37, 99, 235, 0.15);
+            --card-hover: rgba(0, 0, 0, 0.02);
+            --input-bg: rgba(0, 0, 0, 0.03);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top HUD Header */
+        header {
+            background: var(--panel-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-section i {
+            font-size: 26px;
+            color: var(--accent-primary);
+            text-shadow: 0 0 10px var(--glow-color);
+        }
+
+        .logo-section h1 {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            color: var(--text-main);
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .time-hud {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-family: monospace;
+            font-size: 14px;
+            color: var(--accent-primary);
+            background: var(--input-bg);
+            padding: 6px 15px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        /* Theme Toggle Button */
+        .btn-theme-toggle {
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 8px 12px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .btn-theme-toggle:hover {
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+        }
+
+        /* Main Layout Grid */
+        .dashboard-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Side Panel: Flights List */
+        .sidebar {
+            width: 440px;
+            background-color: var(--panel-bg);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .sidebar-header h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .search-bar {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            padding: 10px 14px;
+            border-radius: 8px;
+            color: var(--text-main);
+            font-family: inherit;
+            outline: none;
+        }
+
+        .search-bar:focus {
+            border-color: var(--accent-primary);
+        }
+
+        .flights-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .flight-card {
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .flight-card:hover {
+            background: var(--card-hover);
+            border-color: var(--accent-primary);
+            transform: translateY(-2px);
+        }
+
+        .flight-card.active {
+            background: var(--card-hover);
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 15px var(--glow-color);
+        }
+
+        .flight-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .flight-badge {
+            font-family: monospace;
+            font-size: 14px;
+            font-weight: 600;
+            background: var(--border-color);
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+
+        .airline-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent-primary);
+        }
+
+        .route-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .airport-code {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .route-line {
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, transparent 0%, var(--accent-primary) 50%, transparent 100%);
+            margin: 0 15px;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .route-line i {
+            position: absolute;
+            font-size: 10px;
+            color: var(--accent-primary);
+            animation: fly 3s linear infinite;
+        }
+
+        .distance-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Detail Panel */
+        .detail-panel {
+            flex: 1;
+            padding: 25px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .welcome-view {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            flex: 1;
+            color: var(--text-muted);
+            gap: 15px;
+            text-align: center;
+        }
+
+        .welcome-view i {
+            font-size: 64px;
+            color: var(--accent-primary);
+            opacity: 0.2;
+            animation: pulse 2s infinite alternate;
+        }
+
+        /* HUD Stats Row */
+        .hud-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+
+        .hud-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .hud-card-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .hud-card-value {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        /* Live Radar / Tracking System */
+        .radar-box {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .radar-screen {
+            height: 180px;
+            border-radius: 12px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, rgba(11, 15, 25, 0.95) 100%);
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .radar-sweep {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: conic-gradient(from 0deg at 50% 50%, rgba(16, 185, 129, 0.2) 0deg, transparent 90deg);
+            animation: sweep 4s linear infinite;
+            transform-origin: center;
+            z-index: 1;
+        }
+
+        .radar-grid {
+            position: absolute;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: 1px dashed rgba(16, 185, 129, 0.2);
+        }
+
+        .radar-grid::before {
+            content: '';
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 1px dashed rgba(16, 185, 129, 0.25);
+            top: 35px;
+            left: 35px;
+        }
+
+        .radar-aircraft {
+            position: absolute;
+            font-size: 14px;
+            color: var(--accent-success);
+            text-shadow: 0 0 8px var(--accent-success);
+            z-index: 2;
+            transition: all 0.5s ease-in-out;
+        }
+
+        .radar-aircraft-label {
+            position: absolute;
+            font-size: 10px;
+            color: var(--text-muted);
+            white-space: nowrap;
+            margin-left: 20px;
+            margin-top: -5px;
+        }
+
+        /* Telemetry & Analysis Grid */
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .panel-block {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .panel-block-title {
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+        }
+
+        .telemetry-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+
+        .telemetry-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-muted);
+        }
+
+        .telemetry-value {
+            font-family: monospace;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        /* Action Buttons */
+        .btn-action {
+            background: linear-gradient(135deg, var(--accent-primary) 0%, #1d4ed8 100%);
+            border: none;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-action:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        /* Risk Badges */
+        .risk-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .risk-Low {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-success);
+            border: 1px solid var(--accent-success);
+        }
+        .risk-Medium {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--accent-warning);
+            border: 1px solid var(--accent-warning);
+        }
+        .risk-High {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--accent-danger);
+            border: 1px solid var(--accent-danger);
+        }
+        .risk-Critical {
+            background: rgba(239, 68, 68, 0.3);
+            color: var(--accent-danger);
+            border: 1px solid var(--accent-danger);
+            animation: flash 1s infinite alternate;
+        }
+
+        .advisory-box {
+            background: var(--input-bg);
+            border: 1px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            font-family: monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            color: var(--text-main);
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        @keyframes fly {
+            0% { left: 0%; }
+            100% { left: 100%; }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.2; }
+            100% { transform: scale(1.05); opacity: 0.4; }
+        }
+
+        @keyframes sweep {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top HUD Header -->
+    <header>
+        <div class="logo-section">
+            <i class="fa-solid fa-shield-halved"></i>
+            <div>
+                <h1>AeroSafe AI</h1>
+                <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Aviation Safety Analytics</div>
+            </div>
+        </div>
+        <div class="header-controls">
+            <div class="time-hud">
+                <span><i class="fa-solid fa-clock"></i> UTC TIME: <span id="utc-clock">00:00:00</span></span>
+                <span>|</span>
+                <span>SYSTEM STATUS: <span style="color: var(--accent-success); font-weight: bold;">ACTIVE</span></span>
+            </div>
+            <button class="btn-theme-toggle" onclick="toggleTheme()" title="Toggle Theme">
+                <i class="fa-solid fa-moon" id="theme-icon"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Dashboard Main View -->
+    <div class="dashboard-container">
+        <!-- Sidebar Flights List -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fa-solid fa-plane-departure"></i> Active Flights</h2>
+                <input type="text" id="search-input" class="search-bar" placeholder="Search by flight, route or airline..." onkeyup="filterFlights()">
+            </div>
+            <div class="flights-list" id="flights-container">
+                <!-- Flight Cards populated dynamically -->
+            </div>
+        </div>
+
+        <!-- Main Detail panel -->
+        <div class="detail-panel" id="detail-panel">
+            <div class="welcome-view" id="welcome-view">
+                <i class="fa-solid fa-radar"></i>
+                <h3>Select a flight from the sidebar to inspect telemetry and analyze safety risk.</h3>
+            </div>
+
+            <!-- Detail Grid content hidden by default -->
+            <div id="flight-data-view" style="display: none; flex-direction: column; gap: 20px;">
+                <!-- Flight Header -->
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h2 style="font-size: 28px; font-weight: 800;">
+                            <span id="view-airline" style="color: var(--accent-primary);">Air India</span> 
+                            <span id="view-flight-number" style="color: var(--text-main);">AI101</span>
+                        </h2>
+                        <div id="view-aircraft-info" style="color: var(--text-muted); font-size: 14px;">Boeing 737-800</div>
+                    </div>
+                    <div id="view-risk-badge" class="risk-badge risk-Low">Low Risk</div>
+                </div>
+
+                <!-- HUD Row -->
+                <div class="hud-row">
+                    <div class="hud-card">
+                        <div class="hud-card-label"><i class="fa-solid fa-route"></i> Route (From)</div>
+                        <div class="hud-card-value" id="view-origin-full" style="font-size: 12px; line-height: 1.4;">JFK International Airport</div>
+                    </div>
+                    <div class="hud-card">
+                        <div class="hud-card-label"><i class="fa-solid fa-route"></i> Route (To)</div>
+                        <div class="hud-card-value" id="view-destination-full" style="font-size: 12px; line-height: 1.4;">LAX International Airport</div>
+                    </div>
+                    <div class="hud-card">
+                        <div class="hud-card-label"><i class="fa-solid fa-ruler-horizontal"></i> Total Distance</div>
+                        <div class="hud-card-value" id="view-distance" style="font-size: 14px; font-weight: bold;">3,975 km</div>
+                    </div>
+                    <div class="hud-card">
+                        <div class="hud-card-label"><i class="fa-solid fa-hourglass-half"></i> Flight Schedule</div>
+                        <div class="hud-card-value" id="view-schedule" style="font-size: 11px; line-height: 1.4;">DEP: -- | ARR: --</div>
+                    </div>
+                </div>
+
+                <!-- Live Flight Radar Map / Tracking component -->
+                <div class="radar-box">
+                    <div style="font-size: 15px; font-weight: 600; display: flex; align-items: center; justify-content: space-between;">
+                        <span><i class="fa-solid fa-crosshairs" style="color: var(--accent-success);"></i> Live Radar Position Tracker</span>
+                        <span style="font-size: 11px; color: var(--accent-success); animation: flash 1s infinite alternate;" id="radar-gps-status">● Real-time GPS Locked</span>
+                    </div>
+                    <div class="radar-screen">
+                        <div class="radar-sweep"></div>
+                        <div class="radar-grid"></div>
+                        <div class="radar-aircraft" id="radar-blip">
+                            <i class="fa-solid fa-plane" style="transform: rotate(45deg);"></i>
+                            <div class="radar-aircraft-label" id="radar-blip-label">AI101 (Alt: 35,000 ft)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analysis Grid -->
+                <div class="analysis-grid">
+                    <!-- Sensor Telemetry -->
+                    <div class="panel-block">
+                        <div class="panel-block-title">
+                            <span><i class="fa-solid fa-gauge-high"></i> Sensor Telemetry</span>
+                            <span style="font-size: 12px; color: var(--text-muted);" id="view-telemetry-date">Real-time logs</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 10px;" id="telemetry-container">
+                            <div class="telemetry-item">
+                                <div class="telemetry-label"><i class="fa-solid fa-temperature-high" style="color: #f59e0b;"></i> Exhaust Temp (EGT)</div>
+                                <div class="telemetry-value" id="val-temp">820 °C</div>
+                            </div>
+                            <div class="telemetry-item">
+                                <div class="telemetry-label"><i class="fa-solid fa-droplet" style="color: #3b82f6;"></i> Oil Pressure</div>
+                                <div class="telemetry-value" id="val-oil">55 PSI</div>
+                            </div>
+                            <div class="telemetry-item">
+                                <div class="telemetry-label"><i class="fa-solid fa-wave-square" style="color: #ef4444;"></i> Vibration Amplitude</div>
+                                <div class="telemetry-value" id="val-vib">0.35 g</div>
+                            </div>
+                            <div class="telemetry-item">
+                                <div class="telemetry-label"><i class="fa-solid fa-gears" style="color: #10b981;"></i> Hydraulic Pressure</div>
+                                <div class="telemetry-value" id="val-hyd">3,000 PSI</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI Diagnostic & Explainability -->
+                    <div class="panel-block">
+                        <div class="panel-block-title">
+                            <span><i class="fa-solid fa-brain"></i> Explainable AI Agent</span>
+                            <span style="font-size: 12px; color: var(--accent-primary);">LangGraph Orchestrated</span>
+                        </div>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 15px; flex: 1;">
+                            <div style="display: flex; gap: 10px;">
+                                <button class="btn-action" style="flex: 1;" onclick="predictRisk()"><i class="fa-solid fa-wand-magic-sparkles"></i> Predict Risk</button>
+                                <button class="btn-action" style="flex: 1; background: var(--input-bg); border: 1px solid var(--accent-primary); color: var(--text-main);" onclick="runAgentAnalysis()"><i class="fa-solid fa-brain"></i> Agent Diagnostics</button>
+                            </div>
+                            
+                            <div style="font-size: 13px; color: var(--text-muted);">
+                                <strong>Prediction Risk Score:</strong> <span id="val-risk-score">--</span> / 10
+                            </div>
+
+                            <div class="advisory-box" id="advisory-output">
+Run prediction or diagnostic agent to fetch explainability output.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let flightsData = [];
+        let currentFlightId = null;
+        let radarInterval = null;
+
+        // Toggle Theme Logic
+        function toggleTheme() {
+            const body = document.body;
+            const icon = document.getElementById('theme-icon');
+            if (body.getAttribute('data-theme') === 'light') {
+                body.removeAttribute('data-theme');
+                icon.className = "fa-solid fa-moon";
+            } else {
+                body.setAttribute('data-theme', 'light');
+                icon.className = "fa-solid fa-sun";
+            }
+        }
+
+        // Start Live Clock
+        function startClock() {
+            setInterval(() => {
+                const now = new Date();
+                document.getElementById('utc-clock').innerText = now.toISOString().replace('T', ' ').slice(0, 19) + ' UTC';
+            }, 1000);
+        }
+
+        // Fetch flight list
+        async function fetchFlights() {
+            try {
+                const response = await fetch('/flights');
+                flightsData = await response.json();
+                renderFlightsList(flightsData);
+            } catch (err) {
+                console.error("Error fetching flights:", err);
+            }
+        }
+
+        function renderFlightsList(flights) {
+            const container = document.getElementById('flights-container');
+            container.innerHTML = '';
+            
+            flights.forEach(f => {
+                const card = document.createElement('div');
+                card.className = `flight-card ${f.id === currentFlightId ? 'active' : ''}`;
+                card.onclick = () => selectFlight(f.id);
+                
+                card.innerHTML = `
+                    <div class="flight-card-header">
+                        <span class="flight-badge">${f.flight_number}</span>
+                        <span class="airline-label">${f.airline_name}</span>
+                    </div>
+                    <div class="route-indicator">
+                        <span class="airport-code" title="${f.origin_full}">${f.origin}</span>
+                        <div class="route-line">
+                            <i class="fa-solid fa-plane"></i>
+                        </div>
+                        <span class="airport-code" title="${f.destination_full}">${f.destination}</span>
+                    </div>
+                    <div style="font-size: 11px; margin-bottom: 8px; color: var(--text-muted); font-weight: 500;">
+                        ${f.origin_full.split(' (')[0]} → ${f.destination_full.split(' (')[0]}
+                    </div>
+                    <div class="distance-info">
+                        <span>DEP: ${f.departure_time.slice(11, 16)}</span>
+                        <span>Distance: ${Math.round(f.distance_km)} km</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function filterFlights() {
+            const val = document.getElementById('search-input').value.toLowerCase();
+            const filtered = flightsData.filter(f => 
+                f.flight_number.toLowerCase().includes(val) ||
+                f.origin.toLowerCase().includes(val) ||
+                f.destination.toLowerCase().includes(val) ||
+                f.origin_full.toLowerCase().includes(val) ||
+                f.destination_full.toLowerCase().includes(val) ||
+                f.airline_name.toLowerCase().includes(val)
+            );
+            renderFlightsList(filtered);
+        }
+
+        async function selectFlight(id) {
+            currentFlightId = id;
+            
+            // Toggle highlight in list
+            document.querySelectorAll('.flight-card').forEach(c => c.classList.remove('active'));
+            renderFlightsList(flightsData);
+
+            if (radarInterval) clearInterval(radarInterval);
+
+            // Fetch details
+            try {
+                const response = await fetch(`/flights/${id}`);
+                const data = await response.json();
+
+                document.getElementById('welcome-view').style.display = 'none';
+                document.getElementById('flight-data-view').style.display = 'flex';
+
+                document.getElementById('view-flight-number').innerText = data.flight_number;
+                document.getElementById('view-airline').innerText = data.airline_name;
+                document.getElementById('view-origin-full').innerText = data.origin_full;
+                document.getElementById('view-destination-full').innerText = data.destination_full;
+                document.getElementById('view-aircraft-info').innerText = `${data.aircraft_model || 'Commercial Airliner'}`;
+                
+                const kmDistance = data.distance_km || Math.round(data.flight_duration_hours * 850);
+                document.getElementById('view-distance').innerText = `${Math.round(kmDistance).toLocaleString()} km`;
+                
+                // Format dates to human readable string
+                const depDate = new Date(data.departure_time);
+                const arrDate = new Date(data.arrival_time);
+                
+                document.getElementById('view-schedule').innerHTML = `
+                    <strong>DEP:</strong> ${depDate.toLocaleDateString()} ${depDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}<br>
+                    <strong>ARR:</strong> ${arrDate.toLocaleDateString()} ${arrDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                `;
+                
+                document.getElementById('view-telemetry-date').innerText = `Logs from ${depDate.toLocaleDateString()}`;
+
+                // Render Telemetries
+                const telemetry = data.telemetry;
+                let latestAlt = 35000;
+                if (telemetry && telemetry.length > 0) {
+                    const latest = telemetry[telemetry.length - 1];
+                    latestAlt = latest.altitude_ft;
+                    document.getElementById('val-temp').innerText = `${latest.engine_temp_c} °C`;
+                    document.getElementById('val-oil').innerText = `${latest.oil_pressure_psi} PSI`;
+                    document.getElementById('val-vib').innerText = `${latest.vibration_amplitude_g} g`;
+                    document.getElementById('val-hyd').innerText = `${latest.hydraulic_pressure_psi} PSI`;
+                }
+
+                // Reset diagnosis layout info
+                document.getElementById('val-risk-score').innerText = '--';
+                document.getElementById('advisory-output').innerText = 'Ready for safety analysis.';
+                document.getElementById('view-risk-badge').className = 'risk-badge risk-Low';
+                document.getElementById('view-risk-badge').innerText = 'Low Risk';
+
+                // Setup live tracking simulation on the radar screen
+                animateRadar(data.flight_number, latestAlt);
+
+            } catch (err) {
+                console.error("Error loading flight details:", err);
+            }
+        }
+
+        // Live radar simulation moves blip around radar display
+        function animateRadar(flightNo, altitude) {
+            const blip = document.getElementById('radar-blip');
+            const label = document.getElementById('radar-blip-label');
+            
+            let angle = Math.random() * Math.PI * 2;
+            let radius = 20 + Math.random() * 40; // distance from center in %
+
+            function updateBlip() {
+                // Add slight drift
+                angle += 0.05;
+                const x = 50 + Math.cos(angle) * radius;
+                const y = 50 + Math.sin(angle) * radius;
+                
+                blip.style.left = `${x}%`;
+                blip.style.top = `${y}%`;
+                label.innerText = `${flightNo} (Alt: ${Math.round(altitude).toLocaleString()} ft)`;
+            }
+
+            updateBlip();
+            radarInterval = setInterval(updateBlip, 1000);
+        }
+
+        // Run ML classification
+        async function predictRisk() {
+            if (!currentFlightId) return;
+            const output = document.getElementById('advisory-output');
+            output.innerText = 'Calculating predictive risk score...';
+            
+            try {
+                const response = await fetch(`/flights/${currentFlightId}/predict`, { method: 'POST' });
+                const res = await response.json();
+                
+                document.getElementById('val-risk-score').innerText = res.risk_score;
+                
+                // Update top badge
+                const badge = document.getElementById('view-risk-badge');
+                badge.className = `risk-badge risk-${res.predicted_risk_level}`;
+                badge.innerText = `${res.predicted_risk_level} Risk`;
+
+                output.innerText = `Prediction Completed:\n- Predicted Risk Level: ${res.predicted_risk_level}\n- Risk Score: ${res.risk_score}/10\n\nContributing Factors:\n${JSON.stringify(res.contributing_factors, null, 2)}`;
+            } catch (err) {
+                output.innerText = `Error: ${err.message}`;
+            }
+        }
+
+        // Run LangGraph Agent workflow
+        async function runAgentAnalysis() {
+            if (!currentFlightId) return;
+            const output = document.getElementById('advisory-output');
+            output.innerText = 'Running agentic safety investigator, retrieving docs and compiling advisory report...';
+            
+            try {
+                const response = await fetch(`/flights/${currentFlightId}/safety-analysis`, { method: 'POST' });
+                const res = await response.json();
+                
+                output.innerText = res.safety_advisory;
+            } catch (err) {
+                output.innerText = `Error: ${err.message}`;
+            }
+        }
+
+        // Init page
+        startClock();
+        fetchFlights();
+    </script>
+</body>
+</html>

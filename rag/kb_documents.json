@@ -1,0 +1,27 @@
+[
+  {
+    "id": "KB001",
+    "title": "Engine Operating Limits & Thermal Thresholds",
+    "content": "Aviation turbine engines operating above 900 C represent exhaust gas temperature (EGT) exceedance. Continued operation above 900 C can lead to high-pressure turbine blade creep, degradation of thermal barrier coatings, and potential uncontained engine failure. Immediate borescope inspection is recommended."
+  },
+  {
+    "id": "KB002",
+    "title": "Engine Lubrication & Oil Pressure Failure Modes",
+    "content": "Engine oil pressure dropping below 40 PSI is considered an operational emergency. Low oil pressure leads to catastrophic bearing friction, heat generation, and turbine rotor seizure. In-flight checklists mandate reducing thrust on the affected engine and monitoring engine temperatures."
+  },
+  {
+    "id": "KB003",
+    "title": "Airframe Vibration and Structural Integrity",
+    "content": "Vibration levels exceeding 0.8 g peak-to-peak amplitude indicate mechanical anomalies, typically caused by fan blade imbalance, shaft misalignment, or bearing degradation. Extended vibration leads to fatigue cracks in structural mounts and avionics failures."
+  },
+  {
+    "id": "KB004",
+    "title": "Hydraulic System Pressure & Actuation Safety",
+    "content": "Standard aviation hydraulic systems operate at 3000 PSI. Pressures falling below 2800 PSI degrade flight control response times, landing gear actuation capabilities, and braking systems. Maintenance checks require testing for fluid leaks, actuator wear, or pump failure."
+  },
+  {
+    "id": "KB005",
+    "title": "Post-Incident Maintenance and Flight Return Authorization",
+    "content": "Any aircraft involved in an operational incident (minor or major structural/avionics faults) must undergo a full inspection by a licensed technician and receive a safety release certificate before returning to active commercial flight status."
+  }
+]
